@@ -1,11 +1,11 @@
-import git
+# import git
 import os 
 import requests
 import json
 import openai 
-import tiktoken
+# import tiktoken
 from collections import Counter
-import re
+# import re
 import time
 import math as m
 
