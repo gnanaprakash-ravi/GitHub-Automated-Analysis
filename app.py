@@ -6,17 +6,15 @@ import openai
 import tiktoken
 from collections import Counter
 import re
-import time 
+import time
+import math as m
 
 import streamlit as st
-
 
 from git.repo import Repo
 import openai
 import nbformat
 from nbconvert import PythonExporter
-
-
 
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
@@ -26,10 +24,23 @@ from sumy.summarizers.lex_rank import LexRankSummarizer
 # openai.api_key = 'hided'
 st.title('Github complexity analyser')
 
+# Set your OpenAI API key here or leave it empty
+openai_api_key = ''
+
+if openai_api_key:
+    st.text_input('OpenAI API Key', value=openai_api_key, type='password')
+if not openai_api_key:
+    openai_api_key = st.text_input('Enter OpenAI API Key', type='password')
 
 
-link_aaddress = st.text_input('Enter link Github', '').split('/')
+# Set up OpenAI API credentials
+openai.api_key = openai_api_key
 
+# username = 'gnanaprakash-ravi'
+# link_aadress = 'https://github.com/gnanaprakash-ravi'
+# link_aadress = 'https://github.com/code2prab'
+
+link_aaddress = st.text_input('Enter User\'s Github Profile link', '').split('/')
 
 
 if len(link_aaddress)>=1:
@@ -108,9 +119,7 @@ def openai_bot(prompt):
     chatbot_response = response.choices[0].message.content
     return chatbot_response
 
-import math as m
-def give_prompt(code_snippet):
-    
+def give_prompt(code_snippet): 
     output = ""
 
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -124,7 +133,6 @@ def give_prompt(code_snippet):
     leng = len(code_snippet)
     print(leng)
     for i in range(n):
-
         text = code_snippet[int(i*leng/n):int((i+1)*leng/n)]
 
         prompt = """ 
@@ -136,15 +144,26 @@ def give_prompt(code_snippet):
         Just give 30 words description of the code with its complexity(in percentage) just ignore if code is incomplete but give only proper information
         """.format(code_snippet)
 
-
         response = openai_bot(prompt)
         print(response)
         output = output + response
     return output
 
+# def preprocess_code(code):
+#     if code.endswith('.ipynb'):
+#         # Load the Jupyter notebook
+#         with open(code, 'r', encoding='utf-8') as file:
+#             nb = nbformat.read(file, as_version=4)
 
-import nbformat
-from nbconvert import PythonExporter
+#         # Create a PythonExporter instance
+#         exporter = PythonExporter()
+
+#         # Convert the notebook to Python code
+#         (python_code, _) = exporter.from_notebook_node(nb)
+
+#         code = python_code
+
+#     return code
 
 def preprocess_code1(code):
     max_chunk_size = 1000  # Define the maximum number of tokens per chunk
@@ -180,12 +199,7 @@ def preprocess_code1(code):
     return processed_code
 
 
-
-# username = 'gnanaprakash-ravi'
-# url = 'https://github.com/code2prab'
 if username != '':
-    
-
 
     repos = []
 
@@ -197,20 +211,16 @@ if username != '':
 
     # Check if the request was successful
     if response.status_code == 200:
-
         # Get the response data as JSON
         data = json.loads(response.content)
 
         # Iterate over the repositories
         for repo in data:
-
             # Print the repository name
             # print(repo["name"])
             repos.append(repo["name"])
             
-
     else:
-
         st.error("Error: HTTP {}.".format(response.status_code))
 
     github_url = f"https://github.com/{username}"
@@ -239,6 +249,7 @@ if username != '':
                         if item_path.endswith('.ipynb'):
                             # with open(item_path, 'r') as file:
                             contents = preprocess_code1(item_path)
+                            # contents = preprocess_code1(item_path)
 
                             final+=contents
         #                     l,f,c = extract_names_from_code(item_path)
@@ -248,13 +259,13 @@ if username != '':
         #                     class_names.extend(c)
                 except:
                     pass
+                
             elif os.path.isdir(item_path):  # Check if it's a folder
                 folders.append(item)
 
         # Iterate through the folders and fetch files recursively
 
         for folder in folders:
-
             for item in os.listdir(os.path.join(folder_path, folder)):
                 item_path = os.path.join(folder_path, folder, item)
 
@@ -266,6 +277,7 @@ if username != '':
                         if item_path.endswith('.ipynb'):
                             # with open(item_path, 'r') as file:
                             contents = preprocess_code1(item_path)
+                            # contents = preprocess_code1(item_path)
 
                             final+=contents
         #                         l,f,c = extract_names_from_code(item_path)
@@ -302,13 +314,11 @@ if username != '':
         d[repo_name] = response
         st.write(repo_name+": "+response)
         # user_input = prompt
-        if time.time() - time_stamp <30:
+        if time.time() - time_stamp < 30:
             time.sleep(30-time.time() + time_stamp)
             
         # response = chat_with_chatbot(user_input)
         time_stamp = time.time()
-
-
 
     prompt = f'''json that has key the repository name and complexity corresponding  to that in values
     you need to find the highest complexity repo
@@ -317,13 +327,6 @@ if username != '':
 
     no need of code and explanation just repo name only'''
 
-
-
     response = openai_bot(prompt)
     st.success(response)
     # st.balloons()
-
-
-
-
-
