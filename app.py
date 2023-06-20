@@ -11,8 +11,12 @@ import math as m
 
 import streamlit as st
 
+from tokenizers import Encoding
+from tokenizers.implementations import BaseTokenizer
+from tokenizers.normalizers import Lowercase, Sequence
+from tokenizers.pre_tokenizers import Whitespace
+
 from git.repo import Repo
-import openai
 import nbformat
 from nbconvert import PythonExporter
 
@@ -119,35 +123,68 @@ def openai_bot(prompt):
     chatbot_response = response.choices[0].message.content
     return chatbot_response
 
-def give_prompt(code_snippet): 
+# def give_prompt(code_snippet): 
+#     output = ""
+
+#     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+#     num_tokens = len(encoding.encode(code_snippet))
+#     print(num_tokens+50)
+
+#     n = m.ceil((num_tokens+50)/4096)
+#     print(n)
+
+#     leng = len(code_snippet)
+#     print(leng)
+#     for i in range(n):
+#         text = code_snippet[int(i*leng/n):int((i+1)*leng/n)]
+
+#         prompt = """ 
+
+#             ```python
+#             {}
+#             ```
+
+#         Just give 30 words description of the code with its complexity(in percentage) just ignore if code is incomplete but give only proper information
+#         """.format(code_snippet)
+
+#         response = openai_bot(prompt)
+#         print(response)
+#         output = output + response
+#     return output
+
+def give_prompt(code_snippet):
     output = ""
 
-    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    tokenizer = BaseTokenizer(
+        tokenizer=Whitespace(),
+        normalizer=Sequence([Lowercase()])
+    )
 
-    num_tokens = len(encoding.encode(code_snippet))
-    print(num_tokens+50)
+    encoding: Encoding = tokenizer.encode(code_snippet)
+    print(encoding.num_tokens + 50)
 
-    n = m.ceil((num_tokens+50)/4096)
+    n = m.ceil((encoding.num_tokens + 50) / 4096)
     print(n)
 
     leng = len(code_snippet)
     print(leng)
     for i in range(n):
-        text = code_snippet[int(i*leng/n):int((i+1)*leng/n)]
+        text = code_snippet[int(i * leng / n):int((i + 1) * leng / n)]
 
-        prompt = """ 
+        prompt = f"""
+        ```
+        {text}
+        ```
 
-            ```python
-            {}
-            ```
-
-        Just give 30 words description of the code with its complexity(in percentage) just ignore if code is incomplete but give only proper information
-        """.format(code_snippet)
+        Just give 30 words description of the code with its complexity (in percentage). Just ignore if the code is incomplete but provide only proper information.
+        """
 
         response = openai_bot(prompt)
         print(response)
         output = output + response
     return output
+
 
 # def preprocess_code(code):
 #     if code.endswith('.ipynb'):
