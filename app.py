@@ -117,7 +117,7 @@ def openai_bot(prompt):
             {"role": "system", "content": "You are a user seeking advice on programming language."},
             {"role": "user", "content": prompt}
         ],
-        temperature = 0
+        temperature = 0.6
     )
 
     chatbot_response = response.choices[0].message.content
